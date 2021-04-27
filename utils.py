@@ -1,12 +1,17 @@
 import functools
-from logger import logger
 import traceback
+
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+from logger import logger
+
+DEFAULT_TIMEOUT = 5  # seconds
 
 
 def object_exception_handler(f):
-    """
-    A function wrapper for catching all exceptions and logging them
-    """
+    """A function wrapper for catching all exceptions and logging them."""
 
     @functools.wraps(f)
     def inner(*args, **kwargs):
@@ -42,3 +47,32 @@ def object_exception_handler(f):
             )
 
     return inner
+
+
+class TimeoutHTTPAdapter(HTTPAdapter):
+    """A class setting up a timeout for requests."""
+
+    def __init__(self, *args, **kwargs):
+        self.timeout = DEFAULT_TIMEOUT
+        if "timeout" in kwargs:
+            self.timeout = kwargs["timeout"]
+            del kwargs["timeout"]
+        super().__init__(*args, **kwargs)
+
+    def send(self, request, **kwargs):
+        timeout = kwargs.get("timeout")
+        if timeout is None:
+            kwargs["timeout"] = self.timeout
+        return super().send(request, **kwargs)
+
+
+def setup_request():
+    """A function returning a reauests session with custom timeout and
+    retries."""
+    retries = Retry(
+        total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
+    )
+    req = requests.Session()
+    req.mount("https://", TimeoutHTTPAdapter(max_retries=retries))
+    req.mount("http://", TimeoutHTTPAdapter(max_retries=retries))
+    return req

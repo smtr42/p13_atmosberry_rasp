@@ -1,22 +1,22 @@
-import requests
-from datetime import datetime, time
-from logger import logger
+import os
+import sys
 import time
+from datetime import datetime, time
+
+import pytz
 
 from get_weather import get_data
-import sys
-import pytz
-import os
-import utils
+from logger import logger
 from set_env import set_env
+from utils import object_exception_handler, setup_request
 
 
-@utils.object_exception_handler
+@object_exception_handler
 def utcisoformat(dt):
-    """
-    Return a datetime object in ISO 8601 format in UTC, without microseconds
-    or time zone offset other than 'Z', e.g. '2011-06-28T00:00:00Z'. Useful
-    for making Django DateTimeField values compatible with the
+    """Return a datetime object in ISO 8601 format in UTC, without microseconds
+    or time zone offset other than 'Z', e.g. '2011-06-28T00:00:00Z'.
+
+    Useful for making Django DateTimeField values compatible with the
     jquery.localtime plugin.
     """
     TZ = pytz.timezone("Europe/Paris")
@@ -31,21 +31,22 @@ def utcisoformat(dt):
 
 
 def get_token():
-    """Return the token used to authenticate on the website """
+    """Return the token used to authenticate on the website."""
     return os.getenv("token")
 
 
 def send_data():
-    """Send data to the website with openweather data. """
+    """Send data to the website with openweather data."""
     try:
         token = get_token()
+        req = setup_request()
         while True:
             data = get_data()
             if data:
                 header = {"Authorization": f"Token {token}"}
                 temp = data.get("temp")
                 timestamp = utcisoformat(datetime.now())
-                logger.info(f"Sending data {temp} at {timestamp}")
+                print(f"Sending data {temp} at {timestamp}")
                 data = {
                     "sensor_type": "T",
                     "device": "Raspberry",
@@ -53,7 +54,7 @@ def send_data():
                     "timestamp": timestamp,
                     "name": "BMP280",
                 }
-                response = requests.post(
+                response = req.post(
                     "http://www.simteiva.fr/api/v1/", headers=header, data=data
                 )
             time.sleep(10)
