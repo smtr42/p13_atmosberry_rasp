@@ -20,7 +20,6 @@ def utcisoformat(dt):
     jquery.localtime plugin.
     """
     TZ = pytz.timezone("Europe/Paris")
-    # Convert datetime to UTC, remove microseconds, remove timezone, convert to string
     return (
         TZ.localize(dt.replace(microsecond=0))
         .astimezone(pytz.utc)

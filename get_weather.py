@@ -13,7 +13,8 @@ def get_data():
     api_key = os.getenv("weather_token")
     city = "lyon"
     units = "metric"
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&units={units}&appid={api_key}"
+    url = f"""http://api.openweathermap.org/data/2.5/
+    weather?q={city}&units={units}&appid={api_key}"""
     data = None
     try:
         req = setup_request()
